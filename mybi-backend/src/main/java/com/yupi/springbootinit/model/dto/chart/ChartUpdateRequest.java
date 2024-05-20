@@ -14,25 +14,27 @@ import java.util.List;
 @Data
 public class ChartUpdateRequest implements Serializable {
 
-    /**
-     * id
-     */
     private Long id;
 
     /**
-     * 标题
+     * 名称
      */
-    private String title;
+    private String name;
 
     /**
-     * 内容
+     * 分析目标
      */
-    private String content;
+    private String goal;
 
     /**
-     * 标签列表
+     * 图表数据
      */
-    private List<String> tags;
+    private String chartData;
+
+    /**
+     * 图表类型
+     */
+    private String chartType;
 
     private static final long serialVersionUID = 1L;
 }
