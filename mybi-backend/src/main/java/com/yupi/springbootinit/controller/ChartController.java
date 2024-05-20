@@ -12,11 +12,13 @@ import com.yupi.springbootinit.constant.FileConstant;
 import com.yupi.springbootinit.constant.UserConstant;
 import com.yupi.springbootinit.exception.BusinessException;
 import com.yupi.springbootinit.exception.ThrowUtils;
+import com.yupi.springbootinit.manager.AiManager;
 import com.yupi.springbootinit.model.dto.chart.*;
 import com.yupi.springbootinit.model.dto.file.UploadFileRequest;
 import com.yupi.springbootinit.model.entity.Chart;
 import com.yupi.springbootinit.model.entity.User;
 import com.yupi.springbootinit.model.enums.FileUploadBizEnum;
+import com.yupi.springbootinit.model.vo.biResponse;
 import com.yupi.springbootinit.service.ChartService;
 import com.yupi.springbootinit.service.UserService;
 import com.yupi.springbootinit.utils.ExcelUtils;
@@ -50,6 +52,9 @@ public class ChartController {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private AiManager aiManager;
 
     // region 增删改查
 
@@ -250,7 +255,7 @@ public class ChartController {
      * @return
      */
     @PostMapping("/gen")
-    public BaseResponse<String> genChartByAi(@RequestPart("file") MultipartFile multipartFile,
+    public BaseResponse<biResponse> genChartByAi(@RequestPart("file") MultipartFile multipartFile,
                                              GenChartByAiRequest genChartByAiRequest, HttpServletRequest request) throws FileNotFoundException {
         String name = genChartByAiRequest.getName();
         String goal = genChartByAiRequest.getGoal();
@@ -258,24 +263,44 @@ public class ChartController {
         //校验
         ThrowUtils.throwIf(StringUtils.isBlank(goal),ErrorCode.PARAMS_ERROR,"目标为空");
         ThrowUtils.throwIf(StringUtils.isBlank(name)&&name.length()>100,ErrorCode.PARAMS_ERROR,"名称过长");
+        long biModelId=1792517838291542018L;
+        User loginUser = userService.getLoginUser(request);//快速获取用户信息。
         //用户输入
-        final String prompt="你是一个数据分析师和前端开发专家，接下来我会按照以下的格式给你提供内容：\n" +
-                "分析需求：\n" +
-                "{数据分析的需求或者目标}\n" +
-                "原始数据：\n" +
-                "{csv原始数据，用,作为分隔符}\n" +
-                "请根据以上内容，按照以下指定格式生成内容（此外不要输出多余的开头、结尾、注释）。\n" +
-                "【【【【【\n" +
-                "{前端Echarts V5的option配置对象js代码，合理对数据进行可视化}\n" +
-                "【【【【【\n" +
-                "{明确的数据分析结论、越详细越好，不要生成多余的注释}";
         StringBuilder userInput=new StringBuilder();
-        userInput.append("你是一个数据分析师，接下来给你我的分析目标和原始数据，请告诉我分析结论。").append('\n');
-        userInput.append("分析目标:"+goal).append('\n');
+        userInput.append("分析需求：").append('\n');
+        String userGoal=goal;
+        if(StringUtils.isNotBlank(chartType)){
+            userGoal+= ",请使用" + chartType;
+        }
+        userInput.append(userGoal).append('\n');
+        userInput.append("原始数据：").append('\n');
         //压缩后的数据。
-        String res= ExcelUtils.excelTocsv(multipartFile);
-        userInput.append("数据:").append(res).append('\n');
-        return ResultUtils.success(userInput.toString());
+        String csvData= ExcelUtils.excelTocsv(multipartFile);
+        userInput.append(csvData).append('\n');
+        String result=aiManager.doChat(biModelId,userInput.toString());
+        String[] split = result.split("【【【【【");
+        if(split.length<3){
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"ai生成错误");
+        }
+        String genChart=split[1].trim();
+        String genResult=split[2].trim();
+        //更新到数据库
+        Chart chart=new Chart();
+        chart.setName(name);
+        chart.setGoal(goal);
+        chart.setChartData(csvData);
+        chart.setChartType(chartType);
+        chart.setGenChart(genChart);
+        chart.setGenResult(genResult);
+        chart.setUserId(loginUser.getId());
+        boolean saveResult = chartService.save(chart);
+        ThrowUtils.throwIf(!saveResult,ErrorCode.SYSTEM_ERROR,"图表保存失败");
+        biResponse biResponse=new biResponse();
+        biResponse.setGenChart(genChart);
+        biResponse.setGenResult(genResult);
+        biResponse.setChartId(chart.getId());
+
+        return ResultUtils.success(biResponse);
 
 
 

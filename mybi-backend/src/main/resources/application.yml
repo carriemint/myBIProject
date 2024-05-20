@@ -26,18 +26,18 @@ spring:
     password: zyx123456
   # Redis 配置
   # todo 需替换配置，然后取消注释
-#  redis:
-#    database: 1
-#    host: localhost
-#    port: 6379
-#    timeout: 5000
-#    password: 123456
+  #  redis:
+  #    database: 1
+  #    host: localhost
+  #    port: 6379
+  #    timeout: 5000
+  #    password: 123456
   # Elasticsearch 配置
   # todo 需替换配置，然后取消注释
-#  elasticsearch:
-#    uris: http://localhost:9200
-#    username: root
-#    password: 123456
+  #  elasticsearch:
+  #    uris: http://localhost:9200
+  #    username: root
+  #    password: 123456
   # 文件上传
   servlet:
     multipart:
@@ -101,3 +101,8 @@ knife4j:
         api-rule: package
         api-rule-resources:
           - com.yupi.springbootinit.controller
+#AI接口调用
+yuapi:
+  client:
+    access-key: o8zhqveem0b06jyvkaj68fyu0nyjcbef
+    secret-key: on2bxl0ytyua726wlj7lldbzn948hwi4
