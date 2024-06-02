@@ -1,5 +1,6 @@
 package com.yupi.springbootinit.controller;
 
+import cn.hutool.core.io.FileUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yupi.springbootinit.annotation.AuthCheck;
@@ -13,6 +14,7 @@ import com.yupi.springbootinit.constant.UserConstant;
 import com.yupi.springbootinit.exception.BusinessException;
 import com.yupi.springbootinit.exception.ThrowUtils;
 import com.yupi.springbootinit.manager.AiManager;
+import com.yupi.springbootinit.manager.RedisLimitManager;
 import com.yupi.springbootinit.model.dto.chart.*;
 import com.yupi.springbootinit.model.dto.file.UploadFileRequest;
 import com.yupi.springbootinit.model.entity.Chart;
@@ -35,6 +37,9 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * 帖子接口
@@ -55,6 +60,9 @@ public class ChartController {
 
     @Resource
     private AiManager aiManager;
+
+    @Resource
+    private RedisLimitManager redisLimitManager;
 
     // region 增删改查
 
@@ -263,8 +271,23 @@ public class ChartController {
         //校验
         ThrowUtils.throwIf(StringUtils.isBlank(goal),ErrorCode.PARAMS_ERROR,"目标为空");
         ThrowUtils.throwIf(StringUtils.isBlank(name)&&name.length()>100,ErrorCode.PARAMS_ERROR,"名称过长");
+        //文件校验大小
+        long size=multipartFile.getSize();//字节数
+        String originalFilename= multipartFile.getOriginalFilename();
+        final long oneMb=1024*1024L;
+        ThrowUtils.throwIf(size>oneMb,ErrorCode.PARAMS_ERROR,"文件超过1M");
+        //文件校验后缀
+        String suffix = FileUtil.getSuffix(originalFilename);
+        //合法的文件后缀
+        List<String> validSuffix= Arrays.asList("xlsx","csv");
+        ThrowUtils.throwIf(!validSuffix.contains(suffix),ErrorCode.PARAMS_ERROR,"文件后缀非法");
+        
         long biModelId=1792517838291542018L;
         User loginUser = userService.getLoginUser(request);//快速获取用户信息。
+
+        //限流
+        //每个请求获取一个令牌，没获得就抛异常。
+        redisLimitManager.doRateLimit("genChartByAi_"+loginUser.getId());
         //用户输入
         StringBuilder userInput=new StringBuilder();
         userInput.append("分析需求：").append('\n');

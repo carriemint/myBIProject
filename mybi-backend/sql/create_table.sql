@@ -8,6 +8,13 @@ create database if not exists mybi;
 -- 切换库
 use mybi;
 
+-- chart_1795445006471856130
+create table if not exists chart_1795445006471856130
+(
+    日期 int null,
+    用户数 int null
+)comment 'chart_1795445006471856130' collate = utf8mb4_unicode_ci;
+
 -- 用户表
 create table if not exists user
 (
