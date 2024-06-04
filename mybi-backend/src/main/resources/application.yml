@@ -106,3 +106,5 @@ yuapi:
   client:
     access-key: o8zhqveem0b06jyvkaj68fyu0nyjcbef
     secret-key: on2bxl0ytyua726wlj7lldbzn948hwi4
+#线程池
+Threadpool:
