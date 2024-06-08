@@ -1,6 +1,4 @@
 # 公共配置文件
-# @author <a href="https://github.com/liyupi">程序员鱼皮</a>
-# @from <a href="https://yupi.icu">编程导航知识星球</a>
 spring:
   application:
     name: mybi-backend
@@ -43,6 +41,12 @@ spring:
     multipart:
       # 大小限制
       max-file-size: 10MB
+  #rabbitmq启动
+  rabbitmq:
+    host: localhost
+    port: 5672
+    password: guest
+    username: guest
 server:
   address: 0.0.0.0
   port: 8101
@@ -100,11 +104,11 @@ knife4j:
       default:
         api-rule: package
         api-rule-resources:
-          - com.yupi.springbootinit.controller
+          - com.carrie.springbootinit.controller
 #AI接口调用
 yuapi:
   client:
     access-key: o8zhqveem0b06jyvkaj68fyu0nyjcbef
     secret-key: on2bxl0ytyua726wlj7lldbzn948hwi4
-#线程池
-Threadpool:
+
+
